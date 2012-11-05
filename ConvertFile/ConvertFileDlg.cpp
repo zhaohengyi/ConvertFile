@@ -192,8 +192,84 @@ void CConvertFileDlg::OnBnClickedConvert()
 	}
 }
 
+//使用内存映射来处理文件
 bool CConvertFileDlg::Convert(CString & dest)
 {
-	//转换文件，并写到新的文件在中
-	return false;
+	//打开需要转换的文件
+	HANDLE hFile =  CreateFile(src, GENERIC_READ, FILE_SHARE_READ, 0,\
+								OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+	if (INVALID_HANDLE_VALUE == hFile)
+		return false;
+
+	HANDLE hFileMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+	if ((INVALID_HANDLE_VALUE == hFileMap) || (!hFileMap))
+	{
+		CloseHandle(hFile);
+		return false;
+	}
+
+	if (NULL == MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, 0))
+	{
+		CloseHandle(hFile);
+		CloseHandle(hFileMap);
+		return false;
+	}
+
+	//创建输出文件
+	HANDLE hNewFile = CreateFile(dest, GENERIC_WRITE, FILE_SHARE_READ, 0, \
+								CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	if (hNewFile == INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(hFile);
+		UnmapViewOfFile(hFileMap);
+		CloseHandle(hFileMap);
+		return false;
+	}
+
+	HANDLE hNewFileMap = CreateFileMapping(hNewFile, NULL, PAGE_READONLY, 0, 0, NULL);
+	if ((INVALID_HANDLE_VALUE == hNewFileMap) || (!hNewFileMap))
+	{
+		CloseHandle(hFile);
+		UnmapViewOfFile(hFileMap);
+		CloseHandle(hFileMap);
+
+		CloseHandle(hNewFile);
+		return false;
+	}
+
+	if (NULL == MapViewOfFile(hNewFileMap, FILE_MAP_READ, 0, 0, 0))
+	{
+		CloseHandle(hFile);
+		UnmapViewOfFile(hFileMap);
+		CloseHandle(hFileMap);
+
+		CloseHandle(hNewFile);
+		CloseHandle(hNewFileMap);
+		return false;
+	}
+
+	LPBYTE pSrc = (LPBYTE)hFileMap;
+	LPBYTE pDst = (LPBYTE)hNewFileMap;
+	
+	for (int i = 0; i < 384; i++)
+	{
+		for (int  j = 0; j < 288;  j++)
+		{
+
+			//TODO:
+
+		}
+	}
+
+	FlushViewOfFile(hNewFileMap, 420*315);
+	
+	CloseHandle(hFile);
+	UnmapViewOfFile(hFileMap);
+	CloseHandle(hFileMap);
+
+	CloseHandle(hNewFile);
+	UnmapViewOfFile(hNewFileMap);
+	CloseHandle(hNewFileMap);
+	return true;
 }

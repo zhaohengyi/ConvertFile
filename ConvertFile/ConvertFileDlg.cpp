@@ -66,6 +66,9 @@ BEGIN_MESSAGE_MAP(CConvertFileDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDOPEN, &CConvertFileDlg::OnBnClickedOpen)
 	ON_BN_CLICKED(IDCONVERT, &CConvertFileDlg::OnBnClickedConvert)
+	ON_BN_CLICKED(IDC_TAB_OCC_386, &CConvertFileDlg::OnBnClickedTabOcc386)
+	ON_BN_CLICKED(IDC_TAB_OCC_384, &CConvertFileDlg::OnBnClickedTabOcc384)
+	ON_BN_CLICKED(IDC_TAB_BIN, &CConvertFileDlg::OnBnClickedTabBin)
 END_MESSAGE_MAP()
 
 
@@ -101,7 +104,8 @@ BOOL CConvertFileDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
-	((CButton *)GetDlgItem(IDC_TAB_OCC))->SetCheck(TRUE);//选上
+	((CButton *)GetDlgItem(IDC_TAB_OCC_386))->SetCheck(TRUE);//选上
+	this->fileType = FileIsOcc_386;
 	
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -195,12 +199,45 @@ void CConvertFileDlg::OnBnClickedConvert()
 	}
 }
 
-bool CConvertFileDlg::ConvertOCCTable(BYTE *src, int size, const CString & dest)
+BYTE CConvertFileDlg::ConvertByte(BYTE data)
+{	
+	if (data > 57)
+	{
+		while (data > 57)
+		{
+			data--;
+		}
+	}
+	else if (data < 48)
+	{
+		while (data < 48)
+		{
+			data++;
+		}
+	}
+	
+	return data;
+}
+
+BOOL CConvertFileDlg::InsertOneData(HANDLE hFile)
+{
+	BYTE 	tmpBuf[3];
+	DWORD	dwByteWrite;
+
+	tmpBuf[0] = ConvertByte((BYTE)((GetTickCount() & 0xff00) + (GetTickCount() & 0xff)));
+	tmpBuf[1] = 0x0D;
+	tmpBuf[2] = 0x0A;
+	return WriteFile(hFile, tmpBuf, 3, &dwByteWrite, NULL);		
+}
+
+bool CConvertFileDlg::ConvertOCCTable(BYTE *src, FileType ftype, const CString & dest)
 {
 	BYTE *p = src;
 	BYTE cnt = 0;	
+	BYTE tmpBuf[128];
+	BYTE line = 0;
+	BYTE num = 0;
 	DWORD dwByteWrite = 0;
-	BYTE tmpBuf[11];
 
 	if (p == NULL)
 		return false;
@@ -211,63 +248,84 @@ bool CConvertFileDlg::ConvertOCCTable(BYTE *src, int size, const CString & dest)
 	if (hNewFile == INVALID_HANDLE_VALUE)
 		return false;
 
-	for (WORD j = 0; j < 384; j++)
+	for (WORD j = 0; j < 288; j++)
 	{
-		for (WORD i = 0; i < 288; i++)
+		memset(tmpBuf, '\0',128);
+		num = 0;
+		cnt = 0;
+		for (WORD i = 0; i < 384; i++)
 		{	
-			if (10 == cnt)
-			{//第十个点时，才开始写数据
-				cnt = 0;
-				tmpBuf[10] = (BYTE)(((tmpBuf[0] + tmpBuf[2] + tmpBuf[5] + tmpBuf[8] + tmpBuf[9])/5) & 0xFF);
-				WriteFile(hNewFile, tmpBuf, 11, &dwByteWrite, NULL);			
+			if (i < 360)
+			{//前360个点
+				while (*p != 0x0D)
+				{
+					tmpBuf[cnt++]	= *(p++);
+				}
+				tmpBuf[cnt++] = *(p++);
+				tmpBuf[cnt++] = *(p++);
+
+				num++;
+
+				if (10 == num)
+				{//第十个点时，才开始写数据
+					num = 0;
+					tmpBuf[cnt++] = ConvertByte((BYTE)((GetTickCount() & 0xff00) + (GetTickCount() & 0xff)));
+					tmpBuf[cnt++] = 0x0D;
+					tmpBuf[cnt++] = 0x0A;
+					WriteFile(hNewFile, tmpBuf, cnt, &dwByteWrite, NULL);			
+				
+					cnt = 0;
+					memset(tmpBuf, '\0',128);
+				}	
 			}
 			else
-			{
-				tmpBuf[cnt++] = *(p++);	
-			}
-		}
+			{//剩下的24个点
+				cnt = 0;
+				while (*p != 0x0D)
+				{
+					tmpBuf[cnt++]	= *(p++);
+				}
+			
+				tmpBuf[cnt++] = *(p++);
+				tmpBuf[cnt++] = *(p++);
 
-		//每一行剩下的20个数据
-		for (BYTE i = 0; i < 20; i++)
-			WriteFile(hNewFile, p++, 1, &dwByteWrite, NULL);			
+				WriteFile(hNewFile, tmpBuf, cnt, &dwByteWrite, NULL);			
+			}
+		}		
 
 		//对于386*289分辨率的数据，每行后面需要再加2字节数据
-		if (111554 == size)
+		if (FileIsOcc_386 == ftype)
 		{
-			tmpBuf[0] = (BYTE)((~((tmpBuf[7] + tmpBuf[1] + tmpBuf[3])/3)) & 0xff);
-			tmpBuf[1] = (BYTE)((~((tmpBuf[4] + tmpBuf[6] + tmpBuf[9])/3)) & 0xff);
-			WriteFile(hNewFile, tmpBuf, 2, &dwByteWrite, NULL);			
+			this->InsertOneData(hNewFile);
+			this->InsertOneData(hNewFile);
 		}	
 
-		//剩下的行，一次写入
-		if (270 == j)
+		//前270行，每隔10行插入一行数据
+		if ((j < 270) && (9 == line))
 		{
-			WriteFile(hNewFile, p, (18 * 288), &dwByteWrite, NULL);			
-			if (111554 == size)
-			{//对于386*289分辨率的文件，需要再加上一行数据
-				for (DWORD i = 0; i < 315; i++)
-				{
-					tmpBuf[0] = (BYTE)((GetTickCount() & 0xff00) + (GetTickCount() & 0xff));
-					WriteFile(hNewFile, tmpBuf, 1, &dwByteWrite, NULL);			
-				}				
+			for (DWORD i = 0; i < 420; i++)
+			{
+				this->InsertOneData(hNewFile);
 			}
-			return true;
-		}
+				
+			if (FileIsOcc_386 == ftype)
+			{//对于386*289分辨率的数据，每行后面需要再加2个数据
+				this->InsertOneData(hNewFile);
+				this->InsertOneData(hNewFile);
+			}
 
-		//插入一行数据
-		for (DWORD i = 0; i < 315; i++)
-		{
-			tmpBuf[0] = (BYTE)((GetTickCount() & 0xff00) + (GetTickCount() & 0xff));
-			WriteFile(hNewFile, tmpBuf, 1, &dwByteWrite, NULL);			
+			line = 0;
 		}
-		if (111554 == size)
-		{//对于386*289分辨率的数据，每行后面需要再加2字节数据
-			tmpBuf[0] = (BYTE)((~((tmpBuf[7] + tmpBuf[1] + tmpBuf[3])/3)) & 0xff);
-			tmpBuf[1] = (BYTE)((~((tmpBuf[4] + tmpBuf[6] + tmpBuf[9])/3)) & 0xff);
-			WriteFile(hNewFile, tmpBuf, 2, &dwByteWrite, NULL);			
-		}
+		else
+			line++;
 	}
 
+	if (FileIsOcc_386 == ftype)
+	{//对于386*289分辨率的文件，需要再加上一行数据
+		for (DWORD i = 0; i < 422; i++)
+			this->InsertOneData(hNewFile);
+	}
+	
 	return true;
 }
 
@@ -290,7 +348,7 @@ bool CConvertFileDlg::Convert(CString & dest)
 {	
 	bool reslut = false;
 	DWORD hsize = 0;
-	DWORD hFileSize = 0;
+	DWORD tableSize = 0;
 	DWORD dwBytesRead = 0;
 	
 	//打开需要转换的文件
@@ -300,41 +358,51 @@ bool CConvertFileDlg::Convert(CString & dest)
 	if (INVALID_HANDLE_VALUE == hFile)
 		return false;
 
-	hFileSize = GetFileSize(hFile, &hsize);
+	FileSize = GetFileSize(hFile, &hsize);
 	
-	BYTE *ReadBuffer = (BYTE *)malloc(hFileSize + 10);
-	memset(ReadBuffer, '\0', hFileSize + 10);
+	BYTE *ReadBuffer = (BYTE *)malloc(FileSize + 10);
+	memset(ReadBuffer, '\0', FileSize + 10);
 
-	if( FALSE == ReadFile(hFile, (LPVOID)ReadBuffer, hFileSize, &dwBytesRead, NULL))
+	if( FALSE == ReadFile(hFile, (LPVOID)ReadBuffer, FileSize, &dwBytesRead, NULL))
     {
 		MessageBox(_T("读取文件错误 %wd"));
         CloseHandle(hFile);
         return false;
     }
 
-	//去除回车换行符号
-	BYTE *tmpBuffer =  (BYTE *)malloc(hFileSize + 10);
-	BYTE *ptmp = tmpBuffer;
-	memset(tmpBuffer, '\0', hFileSize + 10);
-	for (DWORD i = 0; i < hFileSize; i++)
+	switch(fileType)
 	{
-		if((ReadBuffer[i] != 0x0D) && (ReadBuffer[i] != 0x0A))
-			*(tmpBuffer++) = ReadBuffer[i];
-	}
-	
-	if (((CButton *)GetDlgItem(IDC_TAB_OCC))->GetCheck())
-	{
-		//fileType = FileIsOcc;
-		reslut = this->ConvertOCCTable(ptmp, hFileSize, dest);
-	}
-	else
-	{
-		//fileType = FileIsBin;
-		reslut = this->CreateBinFile(ptmp, hFileSize, dest);
+	case FileIsOcc_384:
+	case FileIsOcc_386:
+		reslut = this->ConvertOCCTable(ReadBuffer, fileType, dest);break;
+	case FileIsBin:
+		reslut = this->CreateBinFile(ReadBuffer, FileSize, dest);break;
+	default:break;
 	}
 
 	free(ReadBuffer);
 	ReadBuffer = NULL;
 	CloseHandle(hFile);
 	return reslut;
+}
+
+
+void CConvertFileDlg::OnBnClickedTabOcc386()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	fileType = FileIsOcc_386;
+}
+
+
+void CConvertFileDlg::OnBnClickedTabOcc384()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	fileType = FileIsOcc_384;
+}
+
+
+void CConvertFileDlg::OnBnClickedTabBin()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	fileType = FileIsBin;
 }

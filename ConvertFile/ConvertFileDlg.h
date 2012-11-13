@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 // CConvertFileDlg 对话框
 class CConvertFileDlg : public CDialogEx
 {
@@ -17,7 +16,6 @@ public:
 
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
-
 
 // 实现
 protected:
@@ -32,8 +30,12 @@ protected:
 public:
 	afx_msg void OnBnClickedOpen();
 	afx_msg void OnBnClickedConvert();
+	enum FileType {FileIsOcc, FileIsBin};
 private:
 	bool Convert(CString & dest);
+	bool ConvertOCCTable(BYTE *src, int size, const CString & dest);
+	bool CreateBinFile(BYTE *src, int size, const CString & dest);
 private:
 	CString src;
+	//FileType fileType;
 };

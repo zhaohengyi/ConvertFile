@@ -25,7 +25,7 @@ CCreatBinFile::CCreatBinFile(struct strFile *src)
 
 #pragma region Read File
 
-BYTE *CCreatBinFile::ReadBinFile(CString file, DWORD *ReadSize)
+BYTE *CCreatBinFile::ReadBinFile(CString src, DWORD *ReadSize)
 {
 	BYTE *ReadBuffer = NULL;
 	DWORD FileSize = 0;
@@ -33,7 +33,7 @@ BYTE *CCreatBinFile::ReadBinFile(CString file, DWORD *ReadSize)
 	HANDLE hFile = INVALID_HANDLE_VALUE;
 
 	//打开需要转换的文件
-	hFile =  CreateFile(this->file->OCCFilePath, GENERIC_READ, FILE_SHARE_READ, 0,\
+	hFile =  CreateFile(src, GENERIC_READ, FILE_SHARE_READ, 0,\
 		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 	if (INVALID_HANDLE_VALUE == hFile)
@@ -79,15 +79,24 @@ BOOL CCreatBinFile::ReadOCCFile(void)
 		return FALSE;
 
 	DWORD FileSize = 0;
-	BYTE *pHead = this->ReadBinFile(this->file->MCSFilePath, &FileSize);
+	BYTE *pHead = this->ReadBinFile(this->file->OCCFilePath, &FileSize);
 	BYTE *p = pHead;
 	BYTE *pDest = (this->ImageBuf + this->OCCAddr);
 
-	for (DWORD i = 0; i < FileSize; i++)
-	{
-		if ((*p != 0x0D) && (*p != 0x0A))
+	BYTE seps[] = {0x0D, 0x0A};
+	char *next_token = NULL;
+	BYTE *token = (BYTE *)strtok_s((char *)pHead, (char *)seps, &next_token);
+	
+	*((WORD *)pDest) += atoi((char *)token);
+	pDest += 2;
+
+	while (token != NULL)
+	{	
+		token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
+		if (token != NULL)
 		{
-			pDest[i] = *p;
+			*((WORD *)pDest) += atoi((char *)token);
+			pDest += 2;
 		}
 	}
 
@@ -137,24 +146,29 @@ BOOL CCreatBinFile::ReadMemsFile(void)
 	
 	BYTE seps[] = {0x0D, 0x0A};
 	char *next_token = NULL;
+
+	//1、读回来的数是字符
+	//2、第一行、第二行要删除
 	BYTE *token = (BYTE *)strtok_s((char *)pHead, (char *)seps, &next_token);
+	token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
 
-	WORD offset = *((WORD *)token);
-
-	BYTE i = 0;
+	DWORD i = 0;
 	while (token != NULL)
 	{	
 		token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
+		if (token == NULL)
+			break;
+
 		if (i == 0)
-		{
-			pDest += offset;
-			*((WORD *)pDest) = *((WORD *)token);
-			i++;
+		{//将地址往后偏移	
+			pDest += (atoi((char *)token) - 4096);
+			i = 1;
 		}
 		else
-		{
+		{//这次得到的是数据，将数据写到地址后面
+			*((WORD *)pDest) = (WORD)(atoi((char *)token));
+			pDest += 2;
 			i = 0;
-			offset = *((WORD *)token);
 		}
 	}
 

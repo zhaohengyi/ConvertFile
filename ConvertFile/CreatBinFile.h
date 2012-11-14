@@ -24,7 +24,7 @@ private:
 
 	static const DWORD McsSectionSzie = 4*1024*1024;
 private:
-	BYTE *ReadBinFile(CString file, DWORD *ReadSize);
+	BYTE *ReadBinFile(CString src, DWORD *ReadSize);
 private:
 	BOOL ReadMcsFile(void);
 	BOOL ReadOCCFile(void);

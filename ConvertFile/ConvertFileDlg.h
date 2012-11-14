@@ -6,8 +6,11 @@
 
 #pragma once
 
+enum FileType {FileIsOcc_386,FileIsOcc_384, FileIsBin};
+
 struct strFile
 {
+	enum FileType type;
 	CString MCSFilePath;
 	CString OCCFilePath;
 	CString TwoPointFilePath;
@@ -42,7 +45,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedConvert();
-	enum FileType {FileIsOcc_386,FileIsOcc_384, FileIsBin};
 public:
 	afx_msg void OnBnClickedTabOcc386();
 	afx_msg void OnBnClickedTabOcc384();

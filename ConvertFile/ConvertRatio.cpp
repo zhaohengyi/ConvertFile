@@ -4,6 +4,7 @@
 
 ConvertRatio::ConvertRatio(void)
 {
+	this->file = NULL;
 }
 
 ConvertRatio::~ConvertRatio(void)
@@ -15,64 +16,78 @@ ConvertRatio::ConvertRatio(struct strFile *src)
 	this->file = src;
 }
 
-BYTE ConvertRatio::ConvertByte(BYTE data)
-{	
-	if (data > 57)
-	{
-		while (data > 57)
-		{
-			data--;
-		}
-	}
-	else if (data < 48)
-	{
-		while (data < 48)
-		{
-			data++;
-		}
-	}
-	
-	return data;
-}
-
 BOOL ConvertRatio::InsertOneData(HANDLE hFile)
 {
 	BYTE 	tmpBuf[3];
 	DWORD	dwByteWrite;
 
-	tmpBuf[0] = ConvertByte((BYTE)((GetTickCount() & 0xff00) + (GetTickCount() & 0xff)));
+	tmpBuf[0] = ((BYTE)(GetTickCount() & 0x07)) + 48;
 	tmpBuf[1] = 0x0D;
 	tmpBuf[2] = 0x0A;
 	return WriteFile(hFile, tmpBuf, 3, &dwByteWrite, NULL);		
 }
 
-BOOL ConvertRatio::ConvertOCCTable()
+BOOL ConvertRatio::ConvertOCCTable(BYTE *src)
 {
-	BYTE *p = NULL;//src;
+	BOOL ret = FALSE;
 	BYTE cnt = 0;	
 	BYTE tmpBuf[128];
 	BYTE line = 0;
 	BYTE num = 0;
-	DWORD dwByteWrite = 0;
+	BYTE *p = src;
 
-	if (p == NULL)
-		return false;
+	WORD x, y;
+	WORD FrontPoint;
+	WORD FrontRow;
+	
+	DWORD dwByteWrite = 0;
+	HANDLE hNewFile = INVALID_HANDLE_VALUE;
+
+	if (src == NULL)
+	{
+		ret = FALSE;
+		goto _ERROR;
+	}
+
+	switch(this->file->type)
+	{
+	case FileIsOcc_386:
+		x = 386;
+		y = 289;
+		FrontPoint = 340;
+
+		FrontRow = 260;
+		break;
+	case FileIsOcc_384:
+		x = 384;
+		y = 288;
+
+		FrontPoint = 360;
+		FrontRow = 270;
+		break;
+	default:
+		ret = FALSE;
+		goto _ERROR;
+	}
 
 	//创建输出文件
-	HANDLE hNewFile = CreateFile(this->file->DestFilePath, GENERIC_WRITE, FILE_SHARE_READ, 0, \
-								CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	hNewFile = CreateFile(this->file->DestFilePath, GENERIC_WRITE, FILE_SHARE_READ, 0, \
+						  CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (hNewFile == INVALID_HANDLE_VALUE)
-		return false;
+	{
+		ret = FALSE;
+		goto _ERROR;
+	}
 
-	for (WORD j = 0; j < 288; j++)
+	for (WORD j = 0; j < y; j++)
 	{
 		memset(tmpBuf, '\0',128);
 		num = 0;
 		cnt = 0;
-		for (WORD i = 0; i < 384; i++)
+		for (WORD i = 0; i < x; i++)
 		{	
-			if (i < 360)
-			{//前360个点
+			if (i < FrontPoint)
+			{//前FrontPoint个点
 				while (*p != 0x0D)
 				{
 					tmpBuf[cnt++]	= *(p++);
@@ -85,109 +100,105 @@ BOOL ConvertRatio::ConvertOCCTable()
 				if (10 == num)
 				{//第十个点时，才开始写数据
 					num = 0;
-					tmpBuf[cnt++] = ConvertByte((BYTE)((GetTickCount() & 0xff00) + (GetTickCount() & 0xff)));
+					tmpBuf[cnt++] = ((BYTE)(GetTickCount() & 0x07)) + 48;
 					tmpBuf[cnt++] = 0x0D;
 					tmpBuf[cnt++] = 0x0A;
 					WriteFile(hNewFile, tmpBuf, cnt, &dwByteWrite, NULL);			
-				
+
 					cnt = 0;
 					memset(tmpBuf, '\0',128);
 				}	
 			}
 			else
-			{//剩下的24个点
+			{//剩下的(x - FrontPoint)个点
 				cnt = 0;
+				
 				while (*p != 0x0D)
 				{
 					tmpBuf[cnt++]	= *(p++);
 				}
-			
+
 				tmpBuf[cnt++] = *(p++);
 				tmpBuf[cnt++] = *(p++);
 
 				WriteFile(hNewFile, tmpBuf, cnt, &dwByteWrite, NULL);			
 			}
 		}		
-
-		//对于386*289分辨率的数据，加上剩下的两个数据
-		//if (FileIsOcc_386 == ftype)
-		{
-			for (BYTE i = 0; i < 2; i++)
-			{
-				cnt = 0;
-				while (*p != 0x0D)
-				{
-					tmpBuf[cnt++]	= *(p++);
-				}
-			
-				tmpBuf[cnt++] = *(p++);
-				tmpBuf[cnt++] = *(p++);
-
-				WriteFile(hNewFile, tmpBuf, cnt, &dwByteWrite, NULL);			
-			}
-		}	
-
-		//前270行，每隔10行插入一行数据
-		if ((j < 270) && (9 == line))
+	
+		//前FrontRow行，每隔10行插入一行数据
+		if ((j < FrontRow) && (9 == line))
 		{
 			for (DWORD i = 0; i < 420; i++)
 			{
 				this->InsertOneData(hNewFile);
 			}
-				
-			//if (FileIsOcc_386 == ftype)
-			{//对于386*289分辨率的数据，每行后面需要再加2个数据
-				this->InsertOneData(hNewFile);
-				this->InsertOneData(hNewFile);
-			}
+
 			line = 0;
 		}
-		else
+		else//剩下的(y - FrontRow)行，直接写进去
 			line++;
 	}
 
-	//if (FileIsOcc_386 == ftype)
-	{//对于386*289分辨率的文件，需要再加上一行数据
-		for (DWORD i = 0; i < 422; i++)
-			this->InsertOneData(hNewFile);
+	ret = TRUE;
+_ERROR:
+	if ((hNewFile != INVALID_HANDLE_VALUE) && (hNewFile != NULL))
+	{
+		CloseHandle(hNewFile);
 	}
-	
-	CloseHandle(hNewFile);
-	return false;
+
+	return ret;
 }
 
 BOOL ConvertRatio::Generate(void)
 {	
 	BOOL reslut = false;
+	BYTE *ReadBuffer = NULL;
 	DWORD hsize = 0;
 	DWORD tableSize = 0;
 	DWORD dwBytesRead = 0;
+	HANDLE hFile = INVALID_HANDLE_VALUE;
 	
 	//打开需要转换的文件
-	HANDLE hFile =  CreateFile(this->file->OCCFilePath, GENERIC_READ, FILE_SHARE_READ, 0,\
+	hFile =  CreateFile(this->file->OCCFilePath, GENERIC_READ, FILE_SHARE_READ, 0,\
 								OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 	if (INVALID_HANDLE_VALUE == hFile)
-		return false;
+	{
+		reslut = FALSE;
+		goto _ERROR;
+	}
 
 	FileSize = GetFileSize(hFile, &hsize);
 	
-	BYTE *ReadBuffer = (BYTE *)malloc(FileSize + 10);
+	ReadBuffer = (BYTE *)malloc(FileSize + 10);
 	memset(ReadBuffer, '\0', FileSize + 10);
 
 	if( FALSE == ReadFile(hFile, (LPVOID)ReadBuffer, FileSize, &dwBytesRead, NULL))
     {
 		MessageBox(_T("读取文件错误 %wd"));
-        CloseHandle(hFile);
-        return false;
+		reslut = FALSE;
+		goto _ERROR;
     }
 
-	
-	reslut = this->ConvertOCCTable();
+	if (ReadBuffer[dwBytesRead - 2] != 0x0D)
+	{
+		ReadBuffer[dwBytesRead] = 0x0D;
+		ReadBuffer[dwBytesRead+1] = 0x0A;
+	}
 
-	free(ReadBuffer);
-	ReadBuffer = NULL;
-	CloseHandle(hFile);
+	reslut = this->ConvertOCCTable(ReadBuffer);
+
+_ERROR:
+	if (ReadBuffer != NULL)
+	{
+		free(ReadBuffer);
+		ReadBuffer = NULL;
+	}
+	if ((hFile != INVALID_HANDLE_VALUE) && (hFile != NULL))
+	{
+		CloseHandle(hFile);
+	}	
+	
 	return reslut;
 }
 

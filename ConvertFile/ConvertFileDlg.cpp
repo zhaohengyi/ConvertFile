@@ -209,6 +209,8 @@ void CConvertFileDlg::OnBnClickedConvert()
 		this->FileList->DestFilePath = dlg->GetPathName();
 		SetDlgItemText(IDC_SAVE, this->FileList->DestFilePath);
 
+		this->FileList->type = this->fileType;
+
 		if (fileType == FileIsBin)
 		{
 			CreatBinFile = new CCreatBinFile(this->FileList);

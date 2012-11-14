@@ -4,6 +4,7 @@
 
 CCreatBinFile::CCreatBinFile(void)
 {
+	this->file = NULL;
 }
 
 CCreatBinFile::~CCreatBinFile(void)

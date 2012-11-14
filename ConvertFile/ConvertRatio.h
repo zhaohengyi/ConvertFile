@@ -10,8 +10,7 @@ public:
 public :
 	BOOL Generate(void);
 private:
-	BOOL ConvertOCCTable(void);
-	BYTE ConvertByte(BYTE data);
+	BOOL ConvertOCCTable(BYTE *src);
 	BOOL InsertOneData(HANDLE hFile);
 private:
 	struct strFile *file;

@@ -187,15 +187,15 @@ void CConvertFileDlg::OnBnClickedConvert()
 		PathName = dlg->GetPathName();
 		SetDlgItemText(IDC_SAVE, PathName);
 		delete(dlg);
-	}
-
-	if (this->Convert(PathName))
-	{
-		MessageBox(_T("转换完成"));
-	}
-	else
-	{	
-		MessageBox(_T(" 转换错误"));
+	
+		if (this->Convert(PathName))
+		{
+			MessageBox(_T("转换完成"));
+		}
+		else
+		{	
+			MessageBox(_T(" 转换错误"));
+		}
 	}
 }
 
@@ -293,11 +293,22 @@ bool CConvertFileDlg::ConvertOCCTable(BYTE *src, FileType ftype, const CString &
 			}
 		}		
 
-		//对于386*289分辨率的数据，每行后面需要再加2字节数据
+		//对于386*289分辨率的数据，加上剩下的两个数据
 		if (FileIsOcc_386 == ftype)
 		{
-			this->InsertOneData(hNewFile);
-			this->InsertOneData(hNewFile);
+			for (BYTE i = 0; i < 2; i++)
+			{
+				cnt = 0;
+				while (*p != 0x0D)
+				{
+					tmpBuf[cnt++]	= *(p++);
+				}
+			
+				tmpBuf[cnt++] = *(p++);
+				tmpBuf[cnt++] = *(p++);
+
+				WriteFile(hNewFile, tmpBuf, cnt, &dwByteWrite, NULL);			
+			}
 		}	
 
 		//前270行，每隔10行插入一行数据
@@ -326,6 +337,7 @@ bool CConvertFileDlg::ConvertOCCTable(BYTE *src, FileType ftype, const CString &
 			this->InsertOneData(hNewFile);
 	}
 	
+	CloseHandle(hNewFile);
 	return true;
 }
 

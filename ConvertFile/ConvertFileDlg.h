@@ -2,7 +2,20 @@
 // ConvertFileDlg.h : 头文件
 //
 
+#include "resource.h"
+
 #pragma once
+
+struct strFile
+{
+	CString MCSFilePath;
+	CString OCCFilePath;
+	CString TwoPointFilePath;
+	CString VerticalFilePath;
+	CString BlindFilePath;
+	CString MemsFilePath;
+	CString DestFilePath;
+};
 
 // CConvertFileDlg 对话框
 class CConvertFileDlg : public CDialogEx
@@ -28,14 +41,22 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
-	afx_msg void OnBnClickedOpen();
 	afx_msg void OnBnClickedConvert();
 	enum FileType {FileIsOcc_386,FileIsOcc_384, FileIsBin};
-private:
-	CString src[3];
-	FileType fileType;
 public:
 	afx_msg void OnBnClickedTabOcc386();
 	afx_msg void OnBnClickedTabOcc384();
 	afx_msg void OnBnClickedTabBin();
+	afx_msg void OnBnClickedMcs();
+	afx_msg void OnBnClickedOcc();
+	afx_msg void OnBnClickedTwoPoint();
+	afx_msg void OnBnClickedVer();
+	afx_msg void OnBnClickedBlindTab();
+	afx_msg void OnBnClickedMems();
+private: 
+	FileType fileType;
+	struct strFile *FileList;
+	CFileDialog *dlg;
+private:
+	void SafeFree(void);
 };

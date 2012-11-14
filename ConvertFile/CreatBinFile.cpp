@@ -6,16 +6,16 @@ CCreatBinFile::CCreatBinFile(void)
 {
 }
 
-CCreatBinFile::CCreatBinFile(CString *src, CString &dest, BYTE cnt)
-{
-	;
-}
-
 CCreatBinFile::~CCreatBinFile(void)
 {
 }
 
-BOOL CCreatBinFile::CreateBinFile()
+CCreatBinFile::CCreatBinFile(struct strFile *src)
+{
+	this->file = src;
+}
+
+BOOL CCreatBinFile::GenerateBinFile()
 {
 	//BYTE *p = src;
 	//DWORD dwByteWrite = 0;
@@ -31,7 +31,7 @@ BOOL CCreatBinFile::CreateBinFile()
 }
 
 
-BOOL CCreatBinFile::Create()
+BOOL CCreatBinFile::Generate()
 {
 	return false;
 }

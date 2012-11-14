@@ -66,11 +66,16 @@ BEGIN_MESSAGE_MAP(CConvertFileDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_BN_CLICKED(IDOPEN, &CConvertFileDlg::OnBnClickedOpen)
 	ON_BN_CLICKED(IDCONVERT, &CConvertFileDlg::OnBnClickedConvert)
 	ON_BN_CLICKED(IDC_TAB_OCC_386, &CConvertFileDlg::OnBnClickedTabOcc386)
 	ON_BN_CLICKED(IDC_TAB_OCC_384, &CConvertFileDlg::OnBnClickedTabOcc384)
 	ON_BN_CLICKED(IDC_TAB_BIN, &CConvertFileDlg::OnBnClickedTabBin)
+	ON_BN_CLICKED(IDOPEN_MCS, &CConvertFileDlg::OnBnClickedMcs)
+	ON_BN_CLICKED(IDOPEN_OCC, &CConvertFileDlg::OnBnClickedOcc)
+	ON_BN_CLICKED(IDOPEN_TWO_POINT, &CConvertFileDlg::OnBnClickedTwoPoint)
+	ON_BN_CLICKED(IDOPEN_VER, &CConvertFileDlg::OnBnClickedVer)
+	ON_BN_CLICKED(IDOPEN_BLIND_TAB, &CConvertFileDlg::OnBnClickedBlindTab)
+	ON_BN_CLICKED(IDOPEN_MEMS, &CConvertFileDlg::OnBnClickedMems)
 END_MESSAGE_MAP()
 
 
@@ -106,6 +111,11 @@ BOOL CConvertFileDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
+	this->dlg = dlg = new CFileDialog(TRUE, _T("new"), _T("*.bin"),
+									  OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, 
+									  _T("Raw Files (*.bin)|*.bin|All Files (*.*)|*.*||"));
+	FileList = new struct strFile;
+
 	((CButton *)GetDlgItem(IDC_TAB_OCC_386))->SetCheck(TRUE);//选上
 	this->fileType = FileIsOcc_386;
 	
@@ -161,52 +171,31 @@ HCURSOR CConvertFileDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
-void CConvertFileDlg::OnBnClickedOpen()
+void CConvertFileDlg::SafeFree()
 {
-	// TODO: 在此添加控件通知处理程序代码
-	CFileDialog *dlg = NULL;
-	
-	if (fileType == FileIsBin)
+	if (this->dlg != NULL)
 	{
-		dlg = new CFileDialog(TRUE, _T("new"), _T("*.bin"),
-							  OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_ALLOWMULTISELECT, 
-							  _T("Raw Files (*.bin)|*.bin|All Files (*.*)|*.*||"));
-	}
-	else
-	{
-		dlg = new CFileDialog(TRUE, _T("new"), _T("*.bin"),
-							  OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, 
-							  _T("Raw Files (*.bin)|*.bin|All Files (*.*)|*.*||"));
-	}
-	if (IDOK == dlg->DoModal())
-	{
-		if (fileType == FileIsBin)
-		{	
-			POSITION   pos = dlg->GetStartPosition();  
-			while(pos != NULL)  
-			{          
-				CString   strfilePathName = dlg->GetNextPathName(pos); 
-			}
-		}
-		else
-		{
-			src[0] = dlg->GetPathName();
-			SetDlgItemText(IDC_SRC, src[0]);
-		}
-
-		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
+		delete(this->dlg);
+		this->dlg = NULL;
 	}
 
-	delete(dlg);
-	dlg = NULL;
+	if (this->FileList != NULL)
+	{
+		delete(this->FileList);
+		this->FileList = NULL;
+	}
+
+	if (this->dlg != NULL)
+	{
+		delete(dlg);
+		dlg = NULL;
+	}
 }
 
 void CConvertFileDlg::OnBnClickedConvert()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	BOOL ret = 0;
-	CString PathName;
 	CFileDialog *dlg = NULL;
 	CCreatBinFile *CreatBinFile = NULL;
 	ConvertRatio *convertRation = NULL;
@@ -217,18 +206,18 @@ void CConvertFileDlg::OnBnClickedConvert()
 
 	if (IDOK == dlg->DoModal())
 	{
-		PathName = dlg->GetPathName();
-		SetDlgItemText(IDC_SAVE, PathName);
+		this->FileList->DestFilePath = dlg->GetPathName();
+		SetDlgItemText(IDC_SAVE, this->FileList->DestFilePath);
 
 		if (fileType == FileIsBin)
 		{
-			CreatBinFile = new CCreatBinFile((this->src), PathName, 3);
-			ret = CreatBinFile->Create();
+			CreatBinFile = new CCreatBinFile(this->FileList);
+			ret = CreatBinFile->Generate();
 		}
 		else
 		{
-			convertRation = new ConvertRatio((this->src[0]), PathName);
-			ret = convertRation->Convert();
+			convertRation = new ConvertRatio(this->FileList);
+			ret = convertRation->Generate();
 		}
 		if (ret)
 			MessageBox(_T("转换完成"));
@@ -246,8 +235,8 @@ void CConvertFileDlg::OnBnClickedConvert()
 		delete(CreatBinFile);
 		CreatBinFile = NULL;
 	}
-	delete(dlg);
-	dlg = NULL;
+
+	this->SafeFree();
 }
 
 
@@ -255,6 +244,12 @@ void CConvertFileDlg::OnBnClickedTabOcc386()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	fileType = FileIsOcc_386;
+
+	((CButton*)GetDlgItem(IDOPEN_MCS))->EnableWindow(FALSE);
+	((CButton*)GetDlgItem(IDOPEN_TWO_POINT))->EnableWindow(FALSE);
+	((CButton*)GetDlgItem(IDOPEN_VER))->EnableWindow(FALSE);
+	((CButton*)GetDlgItem(IDOPEN_BLIND_TAB))->EnableWindow(FALSE);
+	((CButton*)GetDlgItem(IDOPEN_MEMS))->EnableWindow(FALSE);
 }
 
 
@@ -262,6 +257,12 @@ void CConvertFileDlg::OnBnClickedTabOcc384()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	fileType = FileIsOcc_384;
+
+	((CButton*)GetDlgItem(IDOPEN_MCS))->EnableWindow(FALSE);
+	((CButton*)GetDlgItem(IDOPEN_TWO_POINT))->EnableWindow(FALSE);
+	((CButton*)GetDlgItem(IDOPEN_VER))->EnableWindow(FALSE);
+	((CButton*)GetDlgItem(IDOPEN_BLIND_TAB))->EnableWindow(FALSE);
+	((CButton*)GetDlgItem(IDOPEN_MEMS))->EnableWindow(FALSE);
 }
 
 
@@ -269,4 +270,89 @@ void CConvertFileDlg::OnBnClickedTabBin()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	fileType = FileIsBin;
+
+	((CButton*)GetDlgItem(IDOPEN_MCS))->EnableWindow(TRUE);
+	((CButton*)GetDlgItem(IDOPEN_OCC))->EnableWindow(TRUE);
+	((CButton*)GetDlgItem(IDOPEN_TWO_POINT))->EnableWindow(TRUE);
+	((CButton*)GetDlgItem(IDOPEN_VER))->EnableWindow(TRUE);
+	((CButton*)GetDlgItem(IDOPEN_BLIND_TAB))->EnableWindow(TRUE);
+	((CButton*)GetDlgItem(IDOPEN_MEMS))->EnableWindow(TRUE);
+}
+
+
+void CConvertFileDlg::OnBnClickedMcs()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	if (IDOK == dlg->DoModal())
+	{
+		this->FileList->MCSFilePath = dlg->GetPathName();
+		SetDlgItemText(IDC_MSC, this->FileList->MCSFilePath);
+	
+		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
+	}
+}
+
+
+void CConvertFileDlg::OnBnClickedOcc()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	if (IDOK == dlg->DoModal())
+	{
+		this->FileList->OCCFilePath = dlg->GetPathName();
+		SetDlgItemText(IDC_OCC, this->FileList->OCCFilePath);
+
+		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
+	}
+}
+
+
+void CConvertFileDlg::OnBnClickedTwoPoint()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	if (IDOK == dlg->DoModal())
+	{
+		this->FileList->TwoPointFilePath = dlg->GetPathName();
+		SetDlgItemText(IDC_TWO_POINT, this->FileList->TwoPointFilePath);
+
+		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
+	}
+}
+
+
+void CConvertFileDlg::OnBnClickedVer()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	if (IDOK == dlg->DoModal())
+	{
+		this->FileList->VerticalFilePath = dlg->GetPathName();
+		SetDlgItemText(IDC_VER, this->FileList->VerticalFilePath);
+
+		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
+	}
+}
+
+
+void CConvertFileDlg::OnBnClickedBlindTab()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	if (IDOK == dlg->DoModal())
+	{
+		this->FileList->BlindFilePath = dlg->GetPathName();
+		SetDlgItemText(IDC_BLIND, this->FileList->BlindFilePath);
+
+		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
+	}
+}
+
+
+void CConvertFileDlg::OnBnClickedMems()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	if (IDOK == dlg->DoModal())
+	{
+		this->FileList->MemsFilePath = dlg->GetPathName();
+		SetDlgItemText(IDC_MEMS, this->FileList->MemsFilePath);
+
+		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
+	}
 }

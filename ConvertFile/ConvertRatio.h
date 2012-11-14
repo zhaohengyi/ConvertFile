@@ -1,19 +1,20 @@
+#include "ConvertFileDlg.h"
+
 #pragma once
 class ConvertRatio: public CDialogEx
 {
 public:
 	ConvertRatio(void);
-	ConvertRatio(CString &src, CString &dest);
+	ConvertRatio(struct strFile *src);
 	~ConvertRatio(void);	
 public :
-	BOOL Convert();
+	BOOL Generate(void);
 private:
-	BOOL ConvertOCCTable();
+	BOOL ConvertOCCTable(void);
 	BYTE ConvertByte(BYTE data);
 	BOOL InsertOneData(HANDLE hFile);
 private:
-	CString src;
-	CString dest;
+	struct strFile *file;
 	DWORD FileSize;
 };
 

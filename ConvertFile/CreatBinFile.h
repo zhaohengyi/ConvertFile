@@ -1,13 +1,17 @@
 #pragma once
-class CCreatBinFile
+#include "ConvertFileDlg.h"
+
+class CCreatBinFile:public CDialogEx
 {
 public:
 	CCreatBinFile(void);
-	CCreatBinFile(CString *src, CString &dest, BYTE cnt);
+	CCreatBinFile(struct strFile *src);
 	~CCreatBinFile(void);
 public:
-	BOOL Create();
+	BOOL Generate(void);
 private:
-	BOOL CreateBinFile();
+	BOOL GenerateBinFile(void);
+private:
+	struct strFile *file;
 };
 

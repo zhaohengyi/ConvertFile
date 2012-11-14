@@ -6,16 +6,14 @@ ConvertRatio::ConvertRatio(void)
 {
 }
 
-ConvertRatio::ConvertRatio(CString &src, CString &dest)
-{
-	this->src = src;
-	this->dest = dest;
-}
-
 ConvertRatio::~ConvertRatio(void)
 {
 }
 
+ConvertRatio::ConvertRatio(struct strFile *src)
+{
+	this->file = src;
+}
 
 BYTE ConvertRatio::ConvertByte(BYTE data)
 {	
@@ -61,7 +59,7 @@ BOOL ConvertRatio::ConvertOCCTable()
 		return false;
 
 	//创建输出文件
-	HANDLE hNewFile = CreateFile(dest, GENERIC_WRITE, FILE_SHARE_READ, 0, \
+	HANDLE hNewFile = CreateFile(this->file->DestFilePath, GENERIC_WRITE, FILE_SHARE_READ, 0, \
 								CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (hNewFile == INVALID_HANDLE_VALUE)
 		return false;
@@ -142,7 +140,6 @@ BOOL ConvertRatio::ConvertOCCTable()
 				this->InsertOneData(hNewFile);
 				this->InsertOneData(hNewFile);
 			}
-
 			line = 0;
 		}
 		else
@@ -159,7 +156,7 @@ BOOL ConvertRatio::ConvertOCCTable()
 	return false;
 }
 
-BOOL ConvertRatio::Convert(void)
+BOOL ConvertRatio::Generate(void)
 {	
 	BOOL reslut = false;
 	DWORD hsize = 0;
@@ -167,7 +164,7 @@ BOOL ConvertRatio::Convert(void)
 	DWORD dwBytesRead = 0;
 	
 	//打开需要转换的文件
-	HANDLE hFile =  CreateFile(src, GENERIC_READ, FILE_SHARE_READ, 0,\
+	HANDLE hFile =  CreateFile(this->file->OCCFilePath, GENERIC_READ, FILE_SHARE_READ, 0,\
 								OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 	if (INVALID_HANDLE_VALUE == hFile)

@@ -107,8 +107,8 @@ BOOL CCreatBinFile::ReadNUCFile(void)
 			if (token != NULL)
 			{
 				tmp = (WORD)atoi((char *)token);
-				*(pDest++) = (tmp & 0xff00) >> 8;
-				*(pDest++) = tmp;	
+				*(pDest++) = (BYTE)((tmp & 0xff00) >> 8);
+				*(pDest++) = (BYTE)tmp;	
 			}
 		}
 	}

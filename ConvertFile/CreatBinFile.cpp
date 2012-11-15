@@ -136,7 +136,7 @@ BOOL CCreatBinFile::ReadBlindFile(void)
 
 BOOL CCreatBinFile::ReadMemsFile(void)
 {
-	if (this->file->OCCFilePath.IsEmpty())
+	if (this->file->MemsFilePath.IsEmpty())
 		return FALSE;
 
 	DWORD FileSize = 0;

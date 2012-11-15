@@ -87,7 +87,7 @@ BOOL CCreatBinFile::ReadOCCFile(void)
 	char *next_token = NULL;
 	BYTE *token = (BYTE *)strtok_s((char *)pHead, (char *)seps, &next_token);
 	
-	*((WORD *)pDest) += atoi((char *)token);
+	*((WORD *)pDest) = atoi((char *)token);
 	pDest += 2;
 
 	while (token != NULL)
@@ -95,7 +95,7 @@ BOOL CCreatBinFile::ReadOCCFile(void)
 		token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
 		if (token != NULL)
 		{
-			*((WORD *)pDest) += atoi((char *)token);
+			*((WORD *)pDest) = atoi((char *)token);
 			pDest += 2;
 		}
 	}

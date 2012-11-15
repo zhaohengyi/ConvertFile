@@ -58,7 +58,7 @@ public:
 private: 
 	FileType fileType;
 	struct strFile *FileList;
-	CFileDialog *dlg;
 private:
 	void SafeFree(void);
+	CString GetFilePath(CString ex);
 };

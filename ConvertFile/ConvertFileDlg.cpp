@@ -111,9 +111,6 @@ BOOL CConvertFileDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
-	this->dlg = dlg = new CFileDialog(TRUE, _T("new"), _T("*.bin"),
-									  OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, 
-									  _T("Raw Files (*.bin)|*.bin|All Files (*.*)|*.*||"));
 	FileList = new struct strFile;
 
 	((CButton *)GetDlgItem(IDC_TAB_OCC_386))->SetCheck(TRUE);//选上
@@ -173,22 +170,10 @@ HCURSOR CConvertFileDlg::OnQueryDragIcon()
 
 void CConvertFileDlg::SafeFree()
 {
-	if (this->dlg != NULL)
-	{
-		delete(this->dlg);
-		this->dlg = NULL;
-	}
-
 	if (this->FileList != NULL)
 	{
 		delete(this->FileList);
 		this->FileList = NULL;
-	}
-
-	if (this->dlg != NULL)
-	{
-		delete(dlg);
-		dlg = NULL;
 	}
 }
 
@@ -196,17 +181,17 @@ void CConvertFileDlg::OnBnClickedConvert()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	BOOL ret = 0;
-	CFileDialog *dlg = NULL;
+	CFileDialog *ConvertDlg = NULL;
 	CCreatBinFile *CreatBinFile = NULL;
 	ConvertRatio *convertRation = NULL;
 	
-	dlg = new CFileDialog(FALSE, _T("new"), _T("*.bin"),
+	ConvertDlg = new CFileDialog(FALSE, _T("new"), _T("*.bin"),
 						  OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, 
 						  _T("Raw Files (*.bin)|*.raw|All Files (*.*)|*.*||"));
 
-	if (IDOK == dlg->DoModal())
+	if (IDOK == ConvertDlg->DoModal())
 	{
-		this->FileList->DestFilePath = dlg->GetPathName();
+		this->FileList->DestFilePath = ConvertDlg->GetPathName();
 		SetDlgItemText(IDC_SAVE, this->FileList->DestFilePath);
 
 		this->FileList->type = this->fileType;
@@ -222,7 +207,10 @@ void CConvertFileDlg::OnBnClickedConvert()
 			ret = convertRation->Generate();
 		}
 		if (ret)
+		{
 			MessageBox(_T("转换完成"));
+			this->SafeFree();
+		}
 		else
 			MessageBox(_T(" 转换错误"));
 	}
@@ -237,8 +225,6 @@ void CConvertFileDlg::OnBnClickedConvert()
 		delete(CreatBinFile);
 		CreatBinFile = NULL;
 	}
-
-	this->SafeFree();
 }
 
 
@@ -285,76 +271,71 @@ void CConvertFileDlg::OnBnClickedTabBin()
 void CConvertFileDlg::OnBnClickedMcs()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	if (IDOK == dlg->DoModal())
-	{
-		this->FileList->MCSFilePath = dlg->GetPathName();
-		SetDlgItemText(IDC_MSC, this->FileList->MCSFilePath);
+	this->FileList->MCSFilePath = this->GetFilePath(_T("*.bin"));
+	SetDlgItemText(IDC_MSC, this->FileList->MCSFilePath);
 	
-		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
-	}
+	((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
 }
-
 
 void CConvertFileDlg::OnBnClickedOcc()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	if (IDOK == dlg->DoModal())
-	{
-		this->FileList->OCCFilePath = dlg->GetPathName();
-		SetDlgItemText(IDC_OCC, this->FileList->OCCFilePath);
+	this->FileList->OCCFilePath = this->GetFilePath(_T("*.dat"));
+	SetDlgItemText(IDC_OCC, this->FileList->OCCFilePath);
 
-		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
-	}
+	((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
 }
 
 
 void CConvertFileDlg::OnBnClickedTwoPoint()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	if (IDOK == dlg->DoModal())
-	{
-		this->FileList->TwoPointFilePath = dlg->GetPathName();
-		SetDlgItemText(IDC_TWO_POINT, this->FileList->TwoPointFilePath);
+	this->FileList->TwoPointFilePath = this->GetFilePath(_T("*.bin"));
+	SetDlgItemText(IDC_TWO_POINT, this->FileList->TwoPointFilePath);
 
-		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
-	}
+	((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
 }
 
 
 void CConvertFileDlg::OnBnClickedVer()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	if (IDOK == dlg->DoModal())
-	{
-		this->FileList->VerticalFilePath = dlg->GetPathName();
-		SetDlgItemText(IDC_VER, this->FileList->VerticalFilePath);
+	this->FileList->VerticalFilePath = this->GetFilePath(_T("*.bin"));
+	SetDlgItemText(IDC_VER, this->FileList->VerticalFilePath);
 
-		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
-	}
+	((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
 }
 
 
 void CConvertFileDlg::OnBnClickedBlindTab()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	if (IDOK == dlg->DoModal())
-	{
-		this->FileList->BlindFilePath = dlg->GetPathName();
-		SetDlgItemText(IDC_BLIND, this->FileList->BlindFilePath);
-
-		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
-	}
+	this->FileList->BlindFilePath = this->GetFilePath(_T("*.bin"));
+	SetDlgItemText(IDC_BLIND, this->FileList->BlindFilePath);
+	((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
 }
 
 
 void CConvertFileDlg::OnBnClickedMems()
 {
-	// TODO: 在此添加控件通知处理程序代码
-	if (IDOK == dlg->DoModal())
-	{
-		this->FileList->MemsFilePath = dlg->GetPathName();
-		SetDlgItemText(IDC_MEMS, this->FileList->MemsFilePath);
+	this->FileList->MemsFilePath = this->GetFilePath(_T("*.dat"));
+	SetDlgItemText(IDC_MEMS, this->FileList->MemsFilePath);
+	((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
+}
 
-		((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
-	}
+
+CString CConvertFileDlg::GetFilePath(CString ex)
+{	
+	/*
+		this->OpenDlg = new CFileDialog(TRUE, _T("new"), _T("*.bin"),
+									  OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, 
+									  _T("Raw Files (*.bin)|*.bin|All Files (*.*)|*.*||"));
+	*/
+	CFileDialog dlg(TRUE, _T("new"), ex, OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, 
+					_T("Raw Files (") + ex + _T(")|") + ex + _T("|All Files (*.*)|*.*||"));
+
+	if (IDOK == dlg.DoModal())
+		return dlg.GetPathName();
+	else
+		return NULL;
 }

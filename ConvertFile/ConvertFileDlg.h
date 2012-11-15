@@ -12,7 +12,7 @@ struct strFile
 {
 	enum FileType type;
 	CString MCSFilePath;
-	CString OCCFilePath;
+	CString NUCFilePath;
 	CString TwoPointFilePath;
 	CString VerticalFilePath;
 	CString BlindFilePath;

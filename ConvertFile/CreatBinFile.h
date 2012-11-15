@@ -27,7 +27,7 @@ private:
 	BYTE *ReadBinFile(CString src, DWORD *ReadSize);
 private:
 	BOOL ReadMcsFile(void);
-	BOOL ReadOCCFile(void);
+	BOOL ReadNUCFile(void);
 	BOOL ReadTwoPointFile(void);
 	BOOL ReadVerticalFile(void);
 	BOOL ReadBlindFile(void);

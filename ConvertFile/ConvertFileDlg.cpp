@@ -280,8 +280,8 @@ void CConvertFileDlg::OnBnClickedMcs()
 void CConvertFileDlg::OnBnClickedOcc()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	this->FileList->OCCFilePath = this->GetFilePath(_T("*.dat"));
-	SetDlgItemText(IDC_OCC, this->FileList->OCCFilePath);
+	this->FileList->NUCFilePath = this->GetFilePath(_T("*.dat"));
+	SetDlgItemText(IDC_OCC, this->FileList->NUCFilePath);
 
 	((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
 }

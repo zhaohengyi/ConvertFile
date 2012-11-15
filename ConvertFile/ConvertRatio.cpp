@@ -161,7 +161,7 @@ BOOL ConvertRatio::Generate(void)
 	HANDLE hFile = INVALID_HANDLE_VALUE;
 	
 	//打开需要转换的文件
-	hFile =  CreateFile(this->file->OCCFilePath, GENERIC_READ, FILE_SHARE_READ, 0,\
+	hFile =  CreateFile(this->file->NUCFilePath, GENERIC_READ, FILE_SHARE_READ, 0,\
 								OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 	if (INVALID_HANDLE_VALUE == hFile)

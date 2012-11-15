@@ -73,13 +73,13 @@ BOOL CCreatBinFile::ReadMcsFile(void)
 	return TRUE;
 }
 
-BOOL CCreatBinFile::ReadOCCFile(void)
+BOOL CCreatBinFile::ReadNUCFile(void)
 {
-	if (this->file->OCCFilePath.IsEmpty())
+	if (this->file->NUCFilePath.IsEmpty())
 		return FALSE;
 
 	DWORD FileSize = 0;
-	BYTE *pHead = this->ReadBinFile(this->file->OCCFilePath, &FileSize);
+	BYTE *pHead = this->ReadBinFile(this->file->NUCFilePath, &FileSize);
 	BYTE *p = pHead;
 	BYTE *pDest = (this->ImageBuf + this->OCCAddr);
 
@@ -87,16 +87,29 @@ BOOL CCreatBinFile::ReadOCCFile(void)
 	char *next_token = NULL;
 	BYTE *token = (BYTE *)strtok_s((char *)pHead, (char *)seps, &next_token);
 	
-	*((WORD *)pDest) = atoi((char *)token);
-	pDest += 2;
+	WORD tmp = atoi((char *)token);
+	*(pDest++) = (BYTE)((tmp & 0xff00) >> 8);
+	*(pDest++) = (BYTE)tmp;	
 
+	WORD cnt = 0;
+	
 	while (token != NULL)
 	{	
-		token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
-		if (token != NULL)
+		if(cnt == 419)
+		{//已经处理了一个点，所以要从 -1 ~ 419
+			cnt = -1;
+			pDest += ((512 -420) * 2);
+		}
+		else
 		{
-			*((WORD *)pDest) = atoi((char *)token);
-			pDest += 2;
+			cnt++;
+			token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
+			if (token != NULL)
+			{
+				tmp = (WORD)atoi((char *)token);
+				*(pDest++) = (tmp & 0xff00) >> 8;
+				*(pDest++) = tmp;	
+			}
 		}
 	}
 
@@ -151,8 +164,9 @@ BOOL CCreatBinFile::ReadMemsFile(void)
 	//2、第一行、第二行要删除
 	BYTE *token = (BYTE *)strtok_s((char *)pHead, (char *)seps, &next_token);
 	token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
-
+		
 	DWORD i = 0;
+	DWORD offset = 0;
 	while (token != NULL)
 	{	
 		token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
@@ -161,13 +175,15 @@ BOOL CCreatBinFile::ReadMemsFile(void)
 
 		if (i == 0)
 		{//将地址往后偏移	
-			pDest += (atoi((char *)token) - 4096);
+			offset = (atoi((char *)token) - 4096);
 			i = 1;
 		}
 		else
 		{//这次得到的是数据，将数据写到地址后面
-			*((WORD *)pDest) = (WORD)(atoi((char *)token));
-			pDest += 2;
+			i = atoi((char *)token);
+			*(pDest + offset) = (	BYTE)((i & 0xff00) >> 8);
+			*(pDest + offset + 1) = (BYTE)i;	
+
 			i = 0;
 		}
 	}
@@ -189,7 +205,7 @@ BOOL CCreatBinFile::Generate()
 	DWORD	dwByteWrite = 0;
 
 	this->ReadMcsFile();
-	this->ReadOCCFile();
+	this->ReadNUCFile();
 	this->ReadTwoPointFile();
 	this->ReadVerticalFile();
 	this->ReadBlindFile();

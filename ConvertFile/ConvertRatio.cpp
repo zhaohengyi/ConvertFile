@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "ConvertRatio.h"
+#include <stdlib.h>
 
 
 ConvertRatio::ConvertRatio(void)
@@ -18,13 +19,13 @@ ConvertRatio::ConvertRatio(struct strFile *src)
 
 BOOL ConvertRatio::InsertOneData(HANDLE hFile)
 {
-	BYTE 	tmpBuf[3];
+	BYTE 	tmpBuf[16];
 	DWORD	dwByteWrite;
 
-	tmpBuf[0] = ((BYTE)(GetTickCount() & 0x07)) + 48;
-	tmpBuf[1] = 0x0D;
-	tmpBuf[2] = 0x0A;
-	return WriteFile(hFile, tmpBuf, 3, &dwByteWrite, NULL);		
+	itoa(rand(), (char *)tmpBuf, 10);
+	tmpBuf[2] = 0x0D;
+	tmpBuf[3] = 0x0A;
+	return WriteFile(hFile, tmpBuf, 4, &dwByteWrite, NULL);		
 }
 
 BOOL ConvertRatio::ConvertOCCTable(BYTE *src)
@@ -100,10 +101,11 @@ BOOL ConvertRatio::ConvertOCCTable(BYTE *src)
 				if (10 == num)
 				{//第十个点时，才开始写数据
 					num = 0;
-					tmpBuf[cnt++] = ((BYTE)(GetTickCount() & 0x07)) + 48;
-					tmpBuf[cnt++] = 0x0D;
-					tmpBuf[cnt++] = 0x0A;
-					WriteFile(hNewFile, tmpBuf, cnt, &dwByteWrite, NULL);			
+					//_itoa_s(GetTickCount(), (char *)tmpBuf, 4, 10);
+					itoa(rand(), (char *)(&tmpBuf[cnt]), 10);
+					tmpBuf[cnt + 2] = 0x0D;
+					tmpBuf[cnt + 3] = 0x0A;
+					WriteFile(hNewFile, tmpBuf, cnt + 4, &dwByteWrite, NULL);			
 
 					cnt = 0;
 					memset(tmpBuf, '\0',128);

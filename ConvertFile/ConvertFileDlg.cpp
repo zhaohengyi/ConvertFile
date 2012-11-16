@@ -290,7 +290,7 @@ void CConvertFileDlg::OnBnClickedOcc()
 void CConvertFileDlg::OnBnClickedTwoPoint()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	this->FileList->TwoPointFilePath = this->GetFilePath(_T("*.bin"));
+	this->FileList->TwoPointFilePath = this->GetFilePath(_T("*.dat"));
 	SetDlgItemText(IDC_TWO_POINT, this->FileList->TwoPointFilePath);
 
 	((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
@@ -300,7 +300,7 @@ void CConvertFileDlg::OnBnClickedTwoPoint()
 void CConvertFileDlg::OnBnClickedVer()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	this->FileList->VerticalFilePath = this->GetFilePath(_T("*.bin"));
+	this->FileList->VerticalFilePath = this->GetFilePath(_T("*.dat"));
 	SetDlgItemText(IDC_VER, this->FileList->VerticalFilePath);
 
 	((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
@@ -310,7 +310,7 @@ void CConvertFileDlg::OnBnClickedVer()
 void CConvertFileDlg::OnBnClickedBlindTab()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	this->FileList->BlindFilePath = this->GetFilePath(_T("*.bin"));
+	this->FileList->BlindFilePath = this->GetFilePath(_T("*.dat"));
 	SetDlgItemText(IDC_BLIND, this->FileList->BlindFilePath);
 	((CButton*)GetDlgItem(IDCONVERT))->EnableWindow(TRUE);
 }

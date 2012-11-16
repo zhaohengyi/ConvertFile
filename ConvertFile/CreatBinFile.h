@@ -22,7 +22,9 @@ private:
 	static const DWORD BlindAddr = 0xF00000;
 	static const DWORD MemsAddr = 0xF80000;
 
-	static const DWORD McsSectionSzie = 4*1024*1024;
+	static const DWORD McsSectionSize = 4*1024*1024;
+	static const DWORD BlindSectionSize = 315*1024;
+	static const DWORD MemsSectionSize = 1 * 1024;
 private:
 	BYTE *ReadBinFile(CString src, DWORD *ReadSize);
 private:

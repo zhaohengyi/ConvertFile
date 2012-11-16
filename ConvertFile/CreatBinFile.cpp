@@ -46,7 +46,7 @@ BYTE *CCreatBinFile::ReadBinFile(CString src, DWORD *ReadSize)
 
 	if( FALSE == ReadFile(hFile, (LPVOID)ReadBuffer, FileSize, ReadSize, NULL))
 	{
-		MessageBox(_T("读取文件错误 %wd"));
+		MessageBox(_T("读取文件错误"));
 		goto _ERROR;
 	}
 
@@ -70,7 +70,8 @@ BOOL CCreatBinFile::ReadMcsFile(void)
 	DWORD FileSize = 0;
 	BYTE *p = this->ReadBinFile(this->file->MCSFilePath, &FileSize);
 
-	memcpy_s((this->ImageBuf + this->McsAddr), this->McsSectionSize, p, FileSize);
+	//mcs文件为二进制文件，添加的回车换行符号需要删除
+	memcpy_s((this->ImageBuf + this->McsAddr), this->McsSectionSize, p, (FileSize - 2));
 
 	if (p != NULL)
 	{

@@ -207,12 +207,9 @@ BOOL CCreatBinFile::ReadVerticalFile(void)
 	DWORD tmp = 0;
 	BYTE seps[] = {0x0D, 0x0A};
 	char *next_token = NULL;
+	DWORD cnt = 0;
 
-	//1、读回来的数是字符
-	//2、第一行、第二行要删除
 	BYTE *token = (BYTE *)strtok_s((char *)pHead, (char *)seps, &next_token);
-	token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
-		
 	if (token != NULL)
 	{
 		tmp = atoi((char *)token);
@@ -224,6 +221,13 @@ BOOL CCreatBinFile::ReadVerticalFile(void)
 	
 	while (token != NULL)
 	{	
+		if (419 == cnt)
+		{
+			cnt = -1;
+			for (int i = 0; i < ((512 - 420) * 2); i++)
+				*(pDest++) = 0;
+		}
+
 		token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
 		if (token == NULL)
 			break;
@@ -231,6 +235,7 @@ BOOL CCreatBinFile::ReadVerticalFile(void)
 		tmp = atoi((char *)token);
 		*(pDest++) = (	BYTE)((tmp & 0xff00) >> 8);
 		*(pDest++) = (BYTE)tmp;	
+		cnt++;
 	}
 
 	return TRUE;

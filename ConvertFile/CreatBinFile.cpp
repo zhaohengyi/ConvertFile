@@ -83,35 +83,41 @@ BOOL CCreatBinFile::ReadNUCFile(void)
 	BYTE *p = pHead;
 	BYTE *pDest = (this->ImageBuf + this->OCCAddr);
 
-	BYTE seps[] = {0x0D, 0x0A};
-	char *next_token = NULL;
-	BYTE *token = (BYTE *)strtok_s((char *)pHead, (char *)seps, &next_token);
-	
-	WORD tmp = atoi((char *)token);
-	*(pDest++) = (BYTE)((tmp & 0xff00) >> 8);
-	*(pDest++) = (BYTE)tmp;	
-
 	WORD cnt = 0;
-	
-	while (token != NULL)
-	{	
-		if(cnt == 419)
-		{//已经处理了一个点，所以要从 -1 ~ 419
-			cnt = -1;
-			pDest += ((512 -420) * 2);
+
+	BYTE tmp[16] = {0};
+	WORD j = 0;
+	for (DWORD i = 0; i < FileSize;)
+	{
+		if(cnt == 420)
+		{
+			cnt = 0;
+			for (int i = 0; i < ((512 -420) * 2); i++)
+				*(pDest++) = 0;
 		}
 		else
 		{
-			cnt++;
-			token = (BYTE *)strtok_s(NULL, (char *)seps, &next_token);
-			if (token != NULL)
+			if (p[i] != 0x0D)
 			{
-				tmp = (WORD)atoi((char *)token);
-				*(pDest++) = (BYTE)((tmp & 0xff00) >> 8);
-				*(pDest++) = (BYTE)tmp;	
+				tmp[j++] = p[i];
+				i++;
+			}
+			else
+			{
+				j = (WORD)atoi((char *)tmp);
+				*(pDest++) = (BYTE)((j & 0xff00)>> 8);
+				*(pDest++) = (BYTE)(j & 0xff);
+				i += 2;
+
+				memset(tmp, '\0', 16);
+				cnt++;
+				j = 0;
 			}
 		}
 	}
+
+	for (WORD i = 0; i < ((512 -420) * 2); i++)
+		*(pDest++) = 0;
 
 	if (pHead != NULL)
 	{

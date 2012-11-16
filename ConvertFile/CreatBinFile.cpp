@@ -191,7 +191,7 @@ BOOL CCreatBinFile::ReadTwoPointFile(void)
 		pHead = NULL;
 	}	
 
-	return FALSE;
+	return TRUE;
 }
 
 BOOL CCreatBinFile::ReadVerticalFile(void)
@@ -202,7 +202,7 @@ BOOL CCreatBinFile::ReadVerticalFile(void)
 	DWORD FileSize = 0;
 	BYTE *pHead = this->ReadBinFile(this->file->VerticalFilePath, &FileSize);
 	BYTE *p = pHead;
-	BYTE *pDest = (this->ImageBuf + this->TwoPointAddr);
+	BYTE *pDest = (this->ImageBuf + this->VerticalAddr);
 
 	DWORD tmp = 0;
 	BYTE seps[] = {0x0D, 0x0A};
@@ -233,7 +233,7 @@ BOOL CCreatBinFile::ReadVerticalFile(void)
 		*(pDest++) = (BYTE)tmp;	
 	}
 
-	return FALSE;
+	return TRUE;
 }
 
 BOOL CCreatBinFile::ReadBlindFile(void)
@@ -298,7 +298,8 @@ BOOL CCreatBinFile::ReadBlindFile(void)
 		free(pHead);
 		pHead = NULL;
 	}	
-	return FALSE;
+
+	return TRUE;
 }
 
 BOOL CCreatBinFile::ReadMemsFile(void)
